@@ -9,7 +9,7 @@ config:
       training_folder: "output"
       # uncomment to see performance stats in the terminal every N steps
 #      performance_log_every: 1000
-      device: cuda:0
+      device: mps
       # if a trigger word is specified, it will be added to captions of training data if it does not already exist
       # alternatively, in your captions you can add [trigger] and it will be replaced with the trigger word
 #      trigger_word: "p3r5on"
@@ -45,7 +45,7 @@ config:
         train_text_encoder: false  # probably won't work with flux
         gradient_checkpointing: true  # need the on unless you have a ton of vram
         noise_scheduler: "flowmatch" # for training only
-        optimizer: "adamw8bit"
+        optimizer: "adamw" # adamw8bit not supported on mps
         lr: 1e-4
         # uncomment this to skip the pre training sample
 #        skip_first_sample: true

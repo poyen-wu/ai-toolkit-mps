@@ -37,7 +37,7 @@ export const defaultJobConfig: JobConfig = {
         type: 'diffusion_trainer',
         training_folder: 'output',
         sqlite_db_path: './aitk_db.db',
-        device: 'cuda',
+        device: 'mps',
         trigger_word: null,
         performance_log_every: 10,
         network: {
@@ -69,7 +69,7 @@ export const defaultJobConfig: JobConfig = {
           train_text_encoder: false,
           gradient_checkpointing: true,
           noise_scheduler: 'flowmatch',
-          optimizer: 'adamw8bit',
+          optimizer: 'adamw',
           timestep_type: 'sigmoid',
           content_or_style: 'balanced',
           optimizer_params: {
@@ -94,9 +94,9 @@ export const defaultJobConfig: JobConfig = {
         },
         model: {
           name_or_path: 'ostris/Flex.1-alpha',
-          quantize: true,
+          quantize: false,
           qtype: 'qfloat8',
-          quantize_te: true,
+          quantize_te: false,
           qtype_te: 'qfloat8',
           arch: 'flex1',
           low_vram: false,

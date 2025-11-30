@@ -31,6 +31,7 @@ from collections import OrderedDict
 from toolkit.config_modules import AdapterConfig, AdapterTypes, TrainConfig
 from toolkit.prompt_utils import PromptEmbeds
 import weakref
+from toolkit import device_utils
 
 if TYPE_CHECKING:
     from toolkit.stable_diffusion_model import StableDiffusion
@@ -220,13 +221,17 @@ class CustomAdapter(torch.nn.Module):
         elif self.adapter_type == 'llm_adapter':
             kwargs = {}
             if self.config.quantize_llm:
-                bnb_kwargs = {
-                    'load_in_4bit': True,
-                    'bnb_4bit_quant_type': "nf4",
-                    'bnb_4bit_compute_dtype': torch.bfloat16
-                }
-                quantization_config = BitsAndBytesConfig(**bnb_kwargs)
-                kwargs['quantization_config'] = quantization_config
+                if device_utils.is_mps_available():
+                    print("Warning: BitsAndBytes 4-bit quantization is not supported on MPS. Disabling quantization for LLM adapter.")
+                    self.config.quantize_llm = False
+                else:
+                    bnb_kwargs = {
+                        'load_in_4bit': True,
+                        'bnb_4bit_quant_type': "nf4",
+                        'bnb_4bit_compute_dtype': torch.bfloat16
+                    }
+                    quantization_config = BitsAndBytesConfig(**bnb_kwargs)
+                    kwargs['quantization_config'] = quantization_config
                 kwargs['torch_dtype'] = torch_dtype
                 self.te = AutoModel.from_pretrained(
                     self.config.text_encoder_path,

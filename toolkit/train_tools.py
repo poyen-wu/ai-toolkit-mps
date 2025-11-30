@@ -23,6 +23,7 @@ from diffusers import (
 import torch
 import re
 from transformers import T5Tokenizer, T5EncoderModel, UMT5EncoderModel
+from toolkit import device_utils
 
 SCHEDULER_LINEAR_START = 0.00085
 SCHEDULER_LINEAR_END = 0.0120
@@ -108,8 +109,7 @@ def get_noise_from_latents(latents):
     seed_list = get_seeds_from_latents(latents)
     noise = []
     for seed in seed_list:
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
+        device_utils.manual_seed(seed)
         noise.append(torch.randn_like(latents[0]))
     return torch.stack(noise)
 
@@ -658,8 +658,8 @@ class LearnableSNRGamma:
     This is a trainer for learnable snr gamma
     It will adapt to the dataset and attempt to adjust the snr multiplier to balance the loss over the timesteps
     """
-    def __init__(self, noise_scheduler: Union['DDPMScheduler'], device='cuda'):
-        self.device = device
+    def __init__(self, noise_scheduler: Union['DDPMScheduler'], device=None):
+        self.device = device if device is not None else device_utils.get_device()
         self.noise_scheduler: Union['DDPMScheduler'] = noise_scheduler
         self.offset_1 = torch.nn.Parameter(torch.tensor(0.0, dtype=torch.float32, device=device))
         self.offset_2 = torch.nn.Parameter(torch.tensor(0.777, dtype=torch.float32, device=device))
