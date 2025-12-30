@@ -1,5 +1,7 @@
+import gc
 import torch
 from toolkit.basic import flush
+from toolkit.device_utils import is_mps_available
 from typing import TYPE_CHECKING
 
 
@@ -47,18 +49,31 @@ def unload_text_encoder(model: "BaseModel"):
             if hasattr(pipe, "text_encoder"):
                 te = FakeTextEncoder(device=model.device_torch, dtype=model.torch_dtype)
                 text_encoder_list.append(te)
-                pipe.text_encoder.to('cpu')
+                # if we are on mps, we don't want to move to cpu because it's unified memory
+                # and just freeing the reference is enough and faster
+                if not is_mps_available():
+                    pipe.text_encoder.to('cpu')
+                else:
+                    pipe.text_encoder.to('meta')
                 pipe.text_encoder = te
 
             i = 2
             while hasattr(pipe, f"text_encoder_{i}"):
                 te = FakeTextEncoder(device=model.device_torch, dtype=model.torch_dtype)
                 text_encoder_list.append(te)
+                if is_mps_available():
+                    getattr(pipe, f"text_encoder_{i}").to('meta')
                 setattr(pipe, f"text_encoder_{i}", te)
                 i += 1
             model.text_encoder = text_encoder_list
         else:
             # only has a single text encoder
+            if is_mps_available():
+                model.text_encoder.to('meta')
             model.text_encoder = FakeTextEncoder(device=model.device_torch, dtype=model.torch_dtype)
+
+    if torch.backends.mps.is_available():
+        gc.collect()
+        torch.mps.empty_cache()
 
     flush()
